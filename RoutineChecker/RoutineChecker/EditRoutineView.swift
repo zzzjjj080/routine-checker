@@ -156,7 +156,7 @@ struct EditRoutineView: View {
     }
 }
 
-/// 見た目：型・色・そろった時の演出。押したらすぐ反映する。
+/// 見た目：色・そろった時の演出。押したらすぐ反映する。
 struct StyleSheet: View {
     let routineID: UUID
     @EnvironmentObject private var model: AppModel
@@ -166,12 +166,6 @@ struct StyleSheet: View {
         let style = model.routine(routineID)?.style ?? RoutineStyle()
         NavigationStack {
             Form {
-                Section("見た目の型") {
-                    Picker("見た目の型", selection: binding(\.layout, style.layout)) {
-                        ForEach(RoutineLayout.allCases, id: \.self) { Text(Labels.layout($0)).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                }
                 Section("色") {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
                         ForEach(Theme.all) { theme in

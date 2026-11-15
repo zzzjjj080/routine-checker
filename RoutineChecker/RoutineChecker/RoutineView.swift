@@ -38,11 +38,8 @@ struct RoutineView: View {
                         Text("「編集」から、やることを1行に1つずつ書いてください。")
                     }
                 } else {
-                    switch routine.style.layout {
-                    case .tiles: TilesLayout(routine: routine, checked: checked, theme: theme, onTap: toggle)
-                    case .list: ListLayout(routine: routine, checked: checked, theme: theme, onTap: toggle)
-                    case .cards: CardsLayout(routine: routine, checked: checked, theme: theme, onTap: toggle)
-                    }
+                    // 見た目の型は1列の一覧だけにした（2026-11-15 本人判断）。保存されている型は読むが使わない
+                    ChecklistLayout(routine: routine, checked: checked, theme: theme, onTap: toggle)
                 }
             }
             .frame(maxHeight: .infinity)
