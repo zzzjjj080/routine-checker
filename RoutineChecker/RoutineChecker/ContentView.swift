@@ -36,7 +36,8 @@ struct ContentView: View {
                     }
                 }
             }
-            .navigationTitle("ルーティン")
+            // 一番上の大きな題は出さない（2026-11-15 本人判断）。ボタンの帯だけ残す
+            .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: UUID.self) { id in
                 RoutineView(routineID: id)
             }
