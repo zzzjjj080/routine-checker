@@ -56,13 +56,27 @@ iOS では、アプリを決まった間隔で起こして位置を確かめる�
 
 - 書いた内容も位置情報も端末の中だけ。**通信はしない。** 位置は「家の中か外か」の判定にだけ使い、履歴は残さない。
 
-## 構成（予定）
+## 構成
 
 ```
-RoutineCore/       UIに依存しないロジック（swift test で回す）
-  Routine.swift    リスト・項目・チェック・日の区切り
-  Trigger.swift    時刻 / 家にいる間 の条件
-  Planner.swift    「今の状態から、どの通知をいつ予約するか」を決める（ここをテストで固める）
-  Theme.swift      色のテーマ
-RoutineChecker/    Xcodeプロジェクト（SwiftUI・CLMonitor・UserNotifications）
+RoutineCore/              UIに依存しないロジック（swift test で回す）
+  Time.swift              時刻・日・「チェックが属する1日」（区切りの時刻）
+  Routine.swift           リスト・項目・チェック・きっかけ・見た目
+  Planner.swift           今の状態から、どの通知をいつ予約するかを決める
+  Store.swift             保存するもの全部（家の場所・区切りの時刻など）
+  Theme.swift             色のテーマ6種
+RoutineChecker/           Xcodeプロジェクト（SwiftUI・CLMonitor・UserNotifications）※これから
 ```
+
+### テスト
+
+```sh
+cd RoutineCore && swift test
+```
+
+## 進み具合
+
+- [x] 仕様
+- [x] ロジック（RoutineCore）とテスト
+- [ ] 画面（一覧・リスト3種の見た目・編集・設定）
+- [ ] 通知の予約・家の出入りの見張り
