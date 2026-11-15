@@ -56,6 +56,27 @@ iOS では、アプリを決まった間隔で起こして位置を確かめる�
 
 - 書いた内容も位置情報も端末の中だけ。**通信はしない。** 位置は「家の中か外か」の判定にだけ使い、履歴は残さない。
 
+## iPhone に入れる
+
+Mac で（Xcode が入っていること）：
+
+```sh
+git clone https://github.com/zzzjjj080/routine-checker
+cd routine-checker
+./install-device.sh
+```
+
+iPhone は USB でつなぐ。初めての時は iPhone 側で「デベロッパを信頼」が要ることがある
+（設定 → 一般 → VPNとデバイス管理）。Xcode で `RoutineChecker/RoutineChecker.xcodeproj` を開いて ▶ でもよい。
+
+### 試し方
+
+1. 開くと「朝」「帰り」の2つのリストが入っている。通知を「許可」する。
+2. 右上の「＋」でリストを足す。「編集」で名前・やること（1行に1つ）・いつ知らせるかを決める。
+3. 「家にいる間」を使うなら、設定（左上の歯車）→ 家の場所 →「今いる場所を家にする」。
+   位置情報は「使用中のみ」→「常に許可」の順で2回聞かれる。**「常に許可」にしないと家の出入りが分からない。**
+4. 設定に「今：家にいる / 家の外」が出る。家の出入りの判定は数分遅れることがある。
+
 ## 構成
 
 ```
@@ -65,7 +86,19 @@ RoutineCore/              UIに依存しないロジック（swift test で回�
   Planner.swift           今の状態から、どの通知をいつ予約するかを決める
   Store.swift             保存するもの全部（家の場所・区切りの時刻など）
   Theme.swift             色のテーマ6種
-RoutineChecker/           Xcodeプロジェクト（SwiftUI・CLMonitor・UserNotifications）※これから
+RoutineChecker/           Xcodeプロジェクト（iOS 18 以上）
+  RoutineCheckerApp.swift 起動。裏で起こされた時も通知の受け口と家の見張りを先に用意する
+  AppModel.swift          状態・保存・通知の予約し直し
+  Notifier.swift          通知の予約（毎回全部入れ替え）と「30分後にもう一度」
+  HomeMonitor.swift       家の出入りの見張り（CLMonitor）と位置情報の許可
+  ContentView.swift       一覧
+  RoutineView.swift       リストを開いた画面（進み具合の帯・全部外す・見た目）
+  Layouts.swift           見た目の型3種（マス・リスト・カード）
+  CelebrationOverlay.swift そろった時の演出（光る・紙吹雪・控えめ・なし）
+  EditRoutineView.swift   編集（名前・やること・いつ知らせるか）と見た目の選択
+  SettingsView.swift      設定と家の場所（地図）
+install-device.sh         つないだ iPhone にビルドして入れる
+.github/workflows/        GitHub の Mac でテストとビルドを回す
 ```
 
 ### テスト
@@ -78,5 +111,6 @@ cd RoutineCore && swift test
 
 - [x] 仕様
 - [x] ロジック（RoutineCore）とテスト
-- [ ] 画面（一覧・リスト3種の見た目・編集・設定）
-- [ ] 通知の予約・家の出入りの見張り
+- [x] 画面（一覧・リスト3種の見た目・編集・設定・家の場所）
+- [x] 通知の予約・家の出入りの見張り
+- [ ] 実機での確認（通知・家の出入り）
