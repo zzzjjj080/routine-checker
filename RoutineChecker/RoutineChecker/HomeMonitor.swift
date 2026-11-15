@@ -1,4 +1,5 @@
 import CoreLocation
+import UIKit
 import RoutineCore
 
 /// 家の周りの円への出入りを見張る。
@@ -31,13 +32,29 @@ final class HomeMonitor: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     /// 「常に許可」を求める。iOS では、まず「使用中のみ」を聞いてから「常に」を聞く2段になる。
-    func requestAlways() {
-        wantsAlways = true
+    /// **iOS が「常に」を聞いてくれるのは1回だけ。** もう答えたあとに頼んでも何も出ないので、
+    /// その時は設定アプリのこのアプリのページを開く（みんなの電波と同じ。押しても何も起きない、を無くす）
+    /// `openSettingsIfNeeded` は、押した人が「常に」にしたくて押した行（設定の位置情報）だけ true にする。
+    /// 家の場所を決めた・保存した、のついでに呼ぶところでは、急に設定アプリへ飛ばない
+    func requestAlways(openSettingsIfNeeded: Bool = false) {
         switch manager.authorizationStatus {
-        case .notDetermined: manager.requestWhenInUseAuthorization()
-        case .authorizedWhenInUse: manager.requestAlwaysAuthorization()
-        default: break
+        case .notDetermined:
+            wantsAlways = true
+            manager.requestWhenInUseAuthorization()
+        case .authorizedWhenInUse where !UserDefaults.standard.bool(forKey: Self.askedAlwaysKey):
+            UserDefaults.standard.set(true, forKey: Self.askedAlwaysKey)
+            manager.requestAlwaysAuthorization()
+        case .authorizedAlways:
+            break
+        default:
+            if openSettingsIfNeeded { Self.openAppSettings() }
         }
+    }
+
+    private static let askedAlwaysKey = "askedAlways"
+
+    static func openAppSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
     }
 
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -46,6 +63,7 @@ final class HomeMonitor: NSObject, ObservableObject, CLLocationManagerDelegate {
             self.authorization = status
             if status == .authorizedWhenInUse && self.wantsAlways {
                 self.wantsAlways = false
+                UserDefaults.standard.set(true, forKey: Self.askedAlwaysKey)
                 self.manager.requestAlwaysAuthorization()
             }
         }

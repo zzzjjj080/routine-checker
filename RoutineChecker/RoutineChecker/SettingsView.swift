@@ -8,6 +8,7 @@ struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var homeMonitor: HomeMonitor
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
 
     var body: some View {
@@ -28,25 +29,33 @@ struct SettingsView: View {
                     Text("家")
                 }
 
+                // みんなの電波と同じ作り：行全体を押せる。まだ聞いていなければ許可を聞き、
+                // もう答えたあとは設定アプリのこのアプリのページを開く。
+                // iOS は「常に」を一度しか聞いてくれないので、「使用中のみ」と答えたあとはアプリからは変えられない
                 Section {
-                    LabeledContent("位置情報", value: locationLabel)
-                    if !homeMonitor.hasAlways {
-                        Button(homeMonitor.authorization == .denied ? "設定アプリで「常に」にする" : "「常に許可」にする") {
-                            if homeMonitor.authorization == .denied || homeMonitor.authorization == .restricted {
-                                openSettings()
-                            } else {
-                                homeMonitor.requestAlways()
+                    PermissionRow(icon: "location.fill", title: "位置情報", value: locationLabel,
+                                  ok: homeMonitor.hasAlways,
+                                  note: homeMonitor.hasAlways ? nil : locationNote) {
+                        homeMonitor.requestAlways(openSettingsIfNeeded: true)   // 聞けなければ設定アプリを開く
+                    }
+                    .accessibilityIdentifier("locationRow")
+                    PermissionRow(icon: "bell.fill", title: "通知", value: notificationLabel,
+                                  ok: notificationOK,
+                                  note: notificationOK ? nil : "押すと設定アプリが開きます。「通知を許可」をオンにしてください。") {
+                        if notificationStatus == .notDetermined {
+                            Task {
+                                await model.notifier.requestAuthorizationIfNeeded()
+                                notificationStatus = await model.notifier.authorizationStatus()
                             }
+                        } else {
+                            openSettings()
                         }
                     }
-                    LabeledContent("通知", value: notificationLabel)
-                    if notificationStatus == .denied {
-                        Button("設定アプリで通知をオンにする") { openSettings() }
-                    }
+                    .accessibilityIdentifier("notificationRow")
                 } header: {
                     Text("許可")
                 } footer: {
-                    Text("「家にいる間」の通知には、位置情報の「常に許可」が要ります。位置は家の中か外かの判定にだけ使い、端末の外に送りません。")
+                    Label("位置は家の中か外かの判定にだけ使い、端末の外に送りません。", systemImage: "lock.shield")
                 }
 
                 Section {
@@ -69,6 +78,12 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("閉じる") { dismiss() } } }
             .task { notificationStatus = await model.notifier.authorizationStatus() }
+            // 設定アプリから戻ってきたら、変わった許可をすぐ出し直す
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active else { return }
+                homeMonitor.refreshAuthorization()
+                Task { notificationStatus = await model.notifier.authorizationStatus() }
+            }
         }
     }
 
@@ -80,6 +95,17 @@ struct SettingsView: View {
         case .restricted: return "制限あり"
         default: return "未設定"
         }
+    }
+
+    private var locationNote: String {
+        switch homeMonitor.authorization {
+        case .notDetermined: return "押すと許可を聞きます。「使用中のみ」のあとに出る画面で「常に許可」を選んでください。"
+        default: return "「家にいる間」の通知には「常に」が要ります。押すと設定アプリが開くので、位置情報 →「常に」に。"
+        }
+    }
+
+    private var notificationOK: Bool {
+        [.authorized, .provisional, .ephemeral].contains(notificationStatus)
     }
 
     private var notificationLabel: String {
@@ -185,5 +211,46 @@ struct HomeSettingsView: View {
         if move {
             position = .region(MKCoordinateRegion(center: c, latitudinalMeters: 1200, longitudinalMeters: 1200))
         }
+    }
+}
+
+/// 許可の1行。行のどこを押しても反応する。足りないときは橙で、下に何をすればいいかを出す。
+private struct PermissionRow: View {
+    let icon: String
+    let title: String
+    let value: String
+    let ok: Bool
+    let note: String?
+    let action: () -> Void
+    @State private var tapped = 0
+
+    var body: some View {
+        Button {
+            tapped += 1
+            action()
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 12) {
+                    Image(systemName: icon)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 30, height: 30)
+                        .background(ok ? Color.green : Color.orange, in: RoundedRectangle(cornerRadius: 7))
+                    Text(title).foregroundStyle(Color.primary)
+                    Spacer()
+                    Text(value).font(.subheadline.bold()).foregroundStyle(ok ? Color.green : Color.orange)
+                    Image(systemName: "arrow.up.forward.app").font(.footnote).foregroundStyle(.secondary)
+                }
+                if let note {
+                    Label(note, systemImage: "exclamationmark.triangle.fill")
+                        .font(.footnote.bold())
+                        .foregroundStyle(.orange)
+                }
+            }
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: tapped)
     }
 }
