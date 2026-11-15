@@ -6,6 +6,7 @@ struct RoutineView: View {
     let routineID: UUID
     @EnvironmentObject private var model: AppModel
     @State private var showEdit = false
+    @State private var showTrigger = false
     @State private var showStyle = false
     @State private var confirmClear = false
     @State private var celebrate = 0
@@ -69,10 +70,15 @@ struct RoutineView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
+                Button { showTrigger = true } label: { Image(systemName: "bell") }
+                    .accessibilityLabel("いつ知らせるか")
+            }
+            ToolbarItem(placement: .topBarTrailing) {
                 Button("編集") { showEdit = true }
             }
         }
         .sheet(isPresented: $showEdit) { EditRoutineView(routine: routine) }
+        .sheet(isPresented: $showTrigger) { TriggerEditView(routine: routine) }
         .sheet(isPresented: $showStyle) {
             StyleSheet(routineID: routineID)
                 .presentationDetents([.medium, .large])

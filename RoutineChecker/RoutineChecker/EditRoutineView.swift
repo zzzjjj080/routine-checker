@@ -1,17 +1,66 @@
 import SwiftUI
 import RoutineCore
 
-/// リストの編集：名前・項目・通知のきっかけ。
+/// リストの編集：名前とやることだけ。いつ知らせるかは `TriggerEditView` で別に変える。
 struct EditRoutineView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
 
     @State private var draft: Routine
     @State private var text: String
+
+    init(routine: Routine) {
+        _draft = State(initialValue: routine)
+        _text = State(initialValue: routine.text)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("名前") {
+                    TextField("例：朝、帰り、出かける前", text: $draft.name)
+                }
+
+                Section {
+                    TextEditor(text: $text)
+                        .frame(minHeight: 220)
+                        .font(.body)
+                } header: {
+                    Text("やること")
+                } footer: {
+                    Text("1行に1つずつ書きます。いつ知らせるかは、一覧の🔔の札から変えられます。")
+                }
+            }
+            .navigationTitle("リストの編集")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("やめる") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("保存") { save() }.bold() }
+            }
+        }
+    }
+
+    private func save() {
+        // 保存の直前に最新を取り直し、別の画面で変えた「いつ知らせるか」を上書きしない
+        var routine = model.routine(draft.id) ?? draft
+        routine.name = draft.name.trimmingCharacters(in: .whitespaces).isEmpty ? "リスト" : draft.name
+        routine.setText(text)
+        model.update(routine)
+        dismiss()
+    }
+}
+
+/// いつ知らせるか：このリストの通知のきっかけだけを変える画面。
+struct TriggerEditView: View {
+    let routineID: UUID
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+
     @State private var kind: Kind
     @State private var timeTrigger: TimeTrigger
     @State private var homeTrigger: HomeTrigger
     @State private var showHome = false
+    private let name: String
 
     enum Kind: String, CaseIterable, Identifiable {
         case times, home, off
@@ -26,8 +75,8 @@ struct EditRoutineView: View {
     }
 
     init(routine: Routine) {
-        _draft = State(initialValue: routine)
-        _text = State(initialValue: routine.text)
+        routineID = routine.id
+        name = routine.name
         switch routine.trigger {
         case .none:
             _kind = State(initialValue: .off)
@@ -47,38 +96,22 @@ struct EditRoutineView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("名前") {
-                    TextField("例：朝、帰り、出かける前", text: $draft.name)
-                }
-
-                Section {
-                    TextEditor(text: $text)
-                        .frame(minHeight: 180)
-                        .font(.body)
-                } header: {
-                    Text("やること")
-                } footer: {
-                    Text("1行に1つずつ書きます。")
-                }
-
                 Section {
                     Picker("通知", selection: $kind) {
                         ForEach(Kind.allCases) { Text($0.label).tag($0) }
                     }
                     .pickerStyle(.segmented)
-
-                    switch kind {
-                    case .times: timesEditor
-                    case .home: homeEditor
-                    case .off: EmptyView()
-                    }
-                } header: {
-                    Text("いつ知らせるか")
                 } footer: {
                     Text(footer)
                 }
+
+                switch kind {
+                case .times: Section("曜日と時刻") { timesEditor }
+                case .home: Section("曜日と時間") { homeEditor }
+                case .off: EmptyView()
+                }
             }
-            .navigationTitle("編集")
+            .navigationTitle("いつ知らせるか：\(name)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("やめる") { dismiss() } }
@@ -139,19 +172,18 @@ struct EditRoutineView: View {
     }
 
     private func save() {
-        draft.setText(text)
-        if draft.name.trimmingCharacters(in: .whitespaces).isEmpty { draft.name = "リスト" }
+        guard var routine = model.routine(routineID) else { dismiss(); return }
         switch kind {
         case .times:
             timeTrigger.times = Array(Set(timeTrigger.times)).sorted()
-            draft.trigger = .times(timeTrigger)
+            routine.trigger = .times(timeTrigger)
         case .home:
-            draft.trigger = .atHome(homeTrigger)
+            routine.trigger = .atHome(homeTrigger)
             if !AppModel.shared.homeMonitor.hasAlways { AppModel.shared.homeMonitor.requestAlways() }
         case .off:
-            draft.trigger = .none
+            routine.trigger = .none
         }
-        model.update(draft)
+        model.update(routine)
         dismiss()
     }
 }
