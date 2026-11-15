@@ -17,6 +17,7 @@ struct SettingsView: View {
                 Section {
                     NavigationLink {
                         HomeSettingsView()
+                            .hapticOnOpen()
                     } label: {
                         LabeledContent("家の場所") {
                             Text(model.data.home.map { "半径\(Int($0.radius))m" } ?? "未設定")
@@ -76,7 +77,7 @@ struct SettingsView: View {
             }
             .navigationTitle("設定")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("閉じる") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("閉じる") { Haptics.tap(); dismiss() } } }
             .task { notificationStatus = await model.notifier.authorizationStatus() }
             // 設定アプリから戻ってきたら、変わった許可をすぐ出し直す
             .onChange(of: scenePhase) { _, phase in
@@ -167,6 +168,7 @@ struct HomeSettingsView: View {
                 .disabled(home == nil)
 
                 Button {
+                    Haptics.tap()
                     Task {
                         locating = true
                         homeMonitor.requestAlways()
@@ -182,7 +184,7 @@ struct HomeSettingsView: View {
                 .disabled(locating)
 
                 if home != nil {
-                    Button("家の場所を消す", role: .destructive) { model.data.home = nil }
+                    Button("家の場所を消す", role: .destructive) { Haptics.tap(); model.data.home = nil }
                         .font(.footnote)
                 }
             }
@@ -251,6 +253,6 @@ private struct PermissionRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .sensoryFeedback(.selection, trigger: tapped)
+        .onChange(of: tapped) { Haptics.tap() }
     }
 }

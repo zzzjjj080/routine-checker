@@ -34,8 +34,8 @@ struct EditRoutineView: View {
             .navigationTitle("リストの編集")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("やめる") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) { Button("保存") { save() }.bold() }
+                ToolbarItem(placement: .cancellationAction) { Button("やめる") { Haptics.tap(); dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("保存") { Haptics.tap(); save() }.bold() }
             }
         }
     }
@@ -101,6 +101,7 @@ struct TriggerEditView: View {
                         ForEach(Kind.allCases) { Text($0.label).tag($0) }
                     }
                     .pickerStyle(.segmented)
+                    .onChange(of: kind) { Haptics.tap() }
                 } footer: {
                     Text(footer)
                 }
@@ -114,8 +115,8 @@ struct TriggerEditView: View {
             .navigationTitle("いつ知らせるか：\(name)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("やめる") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) { Button("保存") { save() }.bold() }
+                ToolbarItem(placement: .cancellationAction) { Button("やめる") { Haptics.tap(); dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("保存") { Haptics.tap(); save() }.bold() }
             }
             .sheet(isPresented: $showHome) { NavigationStack { HomeSettingsView() } }
         }
@@ -136,6 +137,7 @@ struct TriggerEditView: View {
                 DatePicker("時刻 \(i + 1)", selection: $timeTrigger.times[i].asDate, displayedComponents: .hourAndMinute)
                 if timeTrigger.times.count > 1 {
                     Button {
+                        Haptics.tap()
                         timeTrigger.times.remove(at: i)
                     } label: {
                         Image(systemName: "minus.circle.fill").foregroundStyle(.red)
@@ -146,6 +148,7 @@ struct TriggerEditView: View {
             }
         }
         Button {
+            Haptics.tap()
             timeTrigger.times.append(timeTrigger.times.last ?? TimeOfDay(7))
         } label: {
             Label("時刻を足す", systemImage: "plus")
@@ -160,6 +163,7 @@ struct TriggerEditView: View {
             ForEach(HomeTrigger.intervalChoices, id: \.self) { Text(Labels.interval($0)).tag($0) }
         }
         Button {
+            Haptics.tap()
             showHome = true
         } label: {
             if let home = model.data.home {
@@ -202,6 +206,7 @@ struct StyleSheet: View {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
                         ForEach(Theme.all) { theme in
                             Button {
+                                Haptics.tap()
                                 model.updateStyle(routineID) { $0.themeID = theme.id }
                             } label: {
                                 VStack(spacing: 6) {
@@ -234,11 +239,11 @@ struct StyleSheet: View {
             }
             .navigationTitle("見た目")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("閉じる") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("閉じる") { Haptics.tap(); dismiss() } } }
         }
     }
 
     private func binding<T>(_ path: WritableKeyPath<RoutineStyle, T>, _ current: T) -> Binding<T> {
-        Binding(get: { current }, set: { value in model.updateStyle(routineID) { $0[keyPath: path] = value } })
+        Binding(get: { current }, set: { value in Haptics.tap(); model.updateStyle(routineID) { $0[keyPath: path] = value } })
     }
 }

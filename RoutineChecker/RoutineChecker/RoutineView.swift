@@ -47,6 +47,7 @@ struct RoutineView: View {
 
             HStack(spacing: 12) {
                 Button {
+                    Haptics.tap()
                     if complete || checked.isEmpty { model.clearChecks(routineID) } else { confirmClear = true }
                 } label: {
                     Label("全部外す", systemImage: "arrow.counterclockwise")
@@ -54,6 +55,7 @@ struct RoutineView: View {
                 }
                 .disabled(checked.isEmpty)
                 Button {
+                    Haptics.tap()
                     showStyle = true
                 } label: {
                     Label("見た目", systemImage: "paintpalette")
@@ -70,29 +72,30 @@ struct RoutineView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { showTrigger = true } label: { Image(systemName: "bell") }
+                Button { Haptics.tap(); showTrigger = true } label: { Image(systemName: "bell") }
                     .accessibilityLabel("いつ知らせるか")
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button("編集") { showEdit = true }
+                Button("編集") { Haptics.tap(); showEdit = true }
             }
         }
-        .sheet(isPresented: $showEdit) { EditRoutineView(routine: routine) }
-        .sheet(isPresented: $showTrigger) { TriggerEditView(routine: routine) }
+        .sheet(isPresented: $showEdit) { EditRoutineView(routine: routine).hapticOnOpen() }
+        .sheet(isPresented: $showTrigger) { TriggerEditView(routine: routine).hapticOnOpen() }
         .sheet(isPresented: $showStyle) {
             StyleSheet(routineID: routineID)
+                .hapticOnOpen()
                 .presentationDetents([.medium, .large])
         }
         .confirmationDialog("\(checked.count)個のチェックを外しますか？", isPresented: $confirmClear,
                             titleVisibility: .visible) {
-            Button("全部外す", role: .destructive) { model.clearChecks(routineID) }
+            Button("全部外す", role: .destructive) { Haptics.tap(); model.clearChecks(routineID) }
         }
         .overlay {
             CelebrationOverlay(kind: routine.style.celebration, trigger: celebrate)
                 .allowsHitTesting(false)
         }
-        .sensoryFeedback(.selection, trigger: tapped)
-        .sensoryFeedback(.success, trigger: celebrate)
+        .onChange(of: tapped) { Haptics.tap() }
+        .onChange(of: celebrate) { Haptics.success() }
         .onAppear {
             if model.editOnOpenID == routineID {
                 model.editOnOpenID = nil

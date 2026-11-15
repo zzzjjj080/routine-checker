@@ -106,6 +106,7 @@ struct WeekdayPicker: View {
             ForEach(Labels.weekdayOrder, id: \.self) { day in
                 let on = selection.contains(day)
                 Button {
+                    Haptics.tap()
                     if on { selection.remove(day) } else { selection.insert(day) }
                 } label: {
                     Text(Labels.weekdaySymbols[day - 1])

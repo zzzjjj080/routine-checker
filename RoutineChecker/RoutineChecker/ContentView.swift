@@ -23,10 +23,10 @@ struct ContentView: View {
                     .listRowInsets(EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16))
                     .listRowBackground(RowBackground(themeID: routine.style.themeID))
                     .swipeActions(edge: .leading) {
-                        Button("複製") { model.duplicate(routine.id) }.tint(.blue)
+                        Button("複製") { Haptics.tap(); model.duplicate(routine.id) }.tint(.blue)
                     }
                     .swipeActions(edge: .trailing) {
-                        Button("削除", role: .destructive) { model.delete(routine.id) }
+                        Button("削除", role: .destructive) { Haptics.tap(); model.delete(routine.id) }
                     }
                 }
                 .onMove { model.move(from: $0, to: $1) }
@@ -34,6 +34,7 @@ struct ContentView: View {
                 if model.data.home == nil && model.data.needsHome {
                     Section {
                         Button {
+                            Haptics.tap()
                             showSettings = true
                         } label: {
                             Label("家の場所を決めると「家にいる間」の通知が使えます", systemImage: "house")
@@ -51,23 +52,24 @@ struct ContentView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button { showSettings = true } label: { Image(systemName: "gearshape") }
+                    Button { Haptics.tap(); showSettings = true } label: { Image(systemName: "gearshape") }
                         .accessibilityLabel("設定")
                 }
                 // 行の「編集」と紛らわしいので、並べ替えだと分かる名前にする
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(editMode.isEditing ? "完了" : "並べ替え") {
+                        Haptics.tap()
                         withAnimation { editMode = editMode.isEditing ? .inactive : .active }
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { path.append(model.addRoutine()) } label: { Image(systemName: "plus") }
+                    Button { Haptics.tap(); path.append(model.addRoutine()) } label: { Image(systemName: "plus") }
                         .accessibilityLabel("リストを足す")
                 }
             }
-            .sheet(isPresented: $showSettings) { SettingsView() }
-            .sheet(item: $triggerRoutine) { TriggerEditView(routine: $0) }
-            .sheet(item: $editRoutine) { EditRoutineView(routine: $0) }
+            .sheet(isPresented: $showSettings) { SettingsView().hapticOnOpen() }
+            .sheet(item: $triggerRoutine) { TriggerEditView(routine: $0).hapticOnOpen() }
+            .sheet(item: $editRoutine) { EditRoutineView(routine: $0).hapticOnOpen() }
         }
         .task { await model.notifier.requestAuthorizationIfNeeded() }
         .onChange(of: model.openRoutineID) { _, id in
@@ -158,7 +160,7 @@ private struct RoutineRow: View {
             .padding(.leading, 6)
         }
         .frame(minHeight: 120)
-        .sensoryFeedback(.selection, trigger: tapped)
+        .onChange(of: tapped) { Haptics.tap() }
     }
 }
 
