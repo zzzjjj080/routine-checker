@@ -40,11 +40,11 @@ public struct AppData: Codable, Hashable, Sendable {
             Routine(name: "朝",
                     text: "薬を飲む\n顔を洗う\n歯をみがく\n水を飲む\n天気を見る",
                     trigger: .times(TimeTrigger()),
-                    style: Style(layout: .cards, themeID: 0)),
+                    style: RoutineStyle(layout: .cards, themeID: 0)),
             Routine(name: "帰り",
                     text: "手を洗う\n弁当箱を出す\nスマホを充電\n明日の準備",
                     trigger: .atHome(HomeTrigger()),
-                    style: Style(layout: .tiles, themeID: 3)),
+                    style: RoutineStyle(layout: .tiles, themeID: 3)),
         ])
     }
 

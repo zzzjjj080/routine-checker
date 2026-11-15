@@ -53,7 +53,7 @@ public enum Trigger: Codable, Hashable, Sendable {
     }
 }
 
-public enum Layout: String, Codable, CaseIterable, Sendable {
+public enum RoutineLayout: String, Codable, CaseIterable, Sendable {
     case tiles   // マス
     case list    // 縦に並ぶ
     case cards   // 1つずつ大きく
@@ -66,12 +66,12 @@ public enum Celebration: String, Codable, CaseIterable, Sendable {
     case none
 }
 
-public struct Style: Codable, Hashable, Sendable {
-    public var layout: Layout
+public struct RoutineStyle: Codable, Hashable, Sendable {
+    public var layout: RoutineLayout
     public var themeID: Int
     public var celebration: Celebration
 
-    public init(layout: Layout = .list, themeID: Int = 0, celebration: Celebration = .glow) {
+    public init(layout: RoutineLayout = .list, themeID: Int = 0, celebration: Celebration = .glow) {
         self.layout = layout
         self.themeID = themeID
         self.celebration = celebration
@@ -83,7 +83,7 @@ public struct Routine: Codable, Hashable, Identifiable, Sendable {
     public var name: String
     public var items: [Item]
     public var trigger: Trigger
-    public var style: Style
+    public var style: RoutineStyle
 
     /// チェックはこの日のものだけ有効。日が変われば自然に空になる（消しに行かなくてよい）。
     public var checked: Set<UUID>
@@ -91,7 +91,7 @@ public struct Routine: Codable, Hashable, Identifiable, Sendable {
     public var lastCompletedAt: Date?
 
     public init(id: UUID = UUID(), name: String, items: [Item] = [], trigger: Trigger = .none,
-                style: Style = Style()) {
+                style: RoutineStyle = RoutineStyle()) {
         self.id = id
         self.name = name
         self.items = items
@@ -102,7 +102,7 @@ public struct Routine: Codable, Hashable, Identifiable, Sendable {
         self.lastCompletedAt = nil
     }
 
-    public init(name: String, text: String, trigger: Trigger = .none, style: Style = Style()) {
+    public init(name: String, text: String, trigger: Trigger = .none, style: RoutineStyle = RoutineStyle()) {
         self.init(name: name, trigger: trigger, style: style)
         setText(text)
     }
