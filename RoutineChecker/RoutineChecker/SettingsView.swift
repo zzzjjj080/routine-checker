@@ -93,7 +93,9 @@ struct SettingsView: View {
     private var version: String {
         let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let b = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
-        return "\(v) (\(b))"
+        // install-device.sh が入れる印（コミット数・ビルド時刻）。Xcode から直接ビルドすると空
+        guard let stamp = Bundle.main.infoDictionary?["RCBuildStamp"] as? String, !stamp.isEmpty else { return "\(v) (\(b))" }
+        return "\(v) (\(b)) · \(stamp)"
     }
 
     private func openSettings() {

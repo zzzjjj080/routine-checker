@@ -18,10 +18,12 @@ fi
 DEV=$(uuid_of "$LINE")
 echo "対象: $DEV"
 
+# 設定画面のいちばん下に出す印。未コミットの変更があれば + を付ける
+STAMP="b$(git rev-list --count HEAD)$(git diff --quiet HEAD -- .. || echo +) $(date '+%m/%d %H:%M')"
 xcodebuild -project RoutineChecker.xcodeproj -scheme RoutineChecker -configuration Release \
   -destination 'generic/platform=iOS' -derivedDataPath /tmp/routinechecker-dev \
-  -allowProvisioningUpdates build
+  -allowProvisioningUpdates RC_BUILD_STAMP="$STAMP" build
 
 APP=$(find /tmp/routinechecker-dev/Build/Products -maxdepth 3 -name "RoutineChecker.app" -path "*Release-iphoneos*" | head -1)
 xcrun devicectl device install app --device "$DEV" "$APP"
-echo "入れ終わりました。ホーム画面の「ルーティン」を開いてください。"
+echo "入れ終わりました。設定（左上の歯車）のいちばん下に「$STAMP」が出ていれば入れ替わっています。"
