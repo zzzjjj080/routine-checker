@@ -264,6 +264,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Stamp-Info.plist";
+				CODE_SIGN_ENTITLEMENTS = RoutineChecker.entitlements;
 				INFOPLIST_KEY_CFBundleDisplayName = "ルーティン";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "家にいる間だけ通知を出すために、家に出入りしたことを知る必要があります。位置は端末の外に送らず、履歴も残しません。";
@@ -300,6 +301,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Stamp-Info.plist";
+				CODE_SIGN_ENTITLEMENTS = RoutineChecker.entitlements;
 				INFOPLIST_KEY_CFBundleDisplayName = "ルーティン";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "家にいる間だけ通知を出すために、家に出入りしたことを知る必要があります。位置は端末の外に送らず、履歴も残しません。";

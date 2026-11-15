@@ -90,6 +90,11 @@ public struct Routine: Codable, Hashable, Identifiable, Sendable {
     public var checkedDay: DayKey?
     public var lastCompletedAt: Date?
 
+    /// やり残したまま家を出たら知らせるか。
+    public var leaveCheck: Bool
+    /// 家を出た知らせを最後に出した日（1日1回まで）。
+    public var leaveAlertedDay: DayKey?
+
     public init(id: UUID = UUID(), name: String, items: [Item] = [], trigger: Trigger = .none,
                 style: RoutineStyle = RoutineStyle()) {
         self.id = id
@@ -100,10 +105,33 @@ public struct Routine: Codable, Hashable, Identifiable, Sendable {
         self.checked = []
         self.checkedDay = nil
         self.lastCompletedAt = nil
+        self.leaveCheck = false
+        self.leaveAlertedDay = nil
     }
 
-    public init(name: String, text: String, trigger: Trigger = .none, style: RoutineStyle = RoutineStyle()) {
+    enum CodingKeys: String, CodingKey {
+        case id, name, items, trigger, style, checked, checkedDay, lastCompletedAt, leaveCheck, leaveAlertedDay
+    }
+
+    /// 後から足した項目は、前の版で保存したデータに無い。無ければ既定の値で読む（データを捨てない）。
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        items = try c.decode([Item].self, forKey: .items)
+        trigger = try c.decode(Trigger.self, forKey: .trigger)
+        style = try c.decode(RoutineStyle.self, forKey: .style)
+        checked = try c.decode(Set<UUID>.self, forKey: .checked)
+        checkedDay = try c.decodeIfPresent(DayKey.self, forKey: .checkedDay)
+        lastCompletedAt = try c.decodeIfPresent(Date.self, forKey: .lastCompletedAt)
+        leaveCheck = try c.decodeIfPresent(Bool.self, forKey: .leaveCheck) ?? false
+        leaveAlertedDay = try c.decodeIfPresent(DayKey.self, forKey: .leaveAlertedDay)
+    }
+
+    public init(name: String, text: String, trigger: Trigger = .none, style: RoutineStyle = RoutineStyle(),
+                leaveCheck: Bool = false) {
         self.init(name: name, trigger: trigger, style: style)
+        self.leaveCheck = leaveCheck
         setText(text)
     }
 
@@ -165,6 +193,8 @@ public struct Routine: Codable, Hashable, Identifiable, Sendable {
 
     /// 複製。書いた内容・きっかけ・見た目だけ写し、チェックと記録は持ち越さない。
     public func duplicated(name: String) -> Routine {
-        Routine(name: name, items: items.map { Item(title: $0.title) }, trigger: trigger, style: style)
+        var copy = Routine(name: name, items: items.map { Item(title: $0.title) }, trigger: trigger, style: style)
+        copy.leaveCheck = leaveCheck
+        return copy
     }
 }

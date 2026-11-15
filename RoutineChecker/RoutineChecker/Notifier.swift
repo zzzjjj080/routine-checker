@@ -52,6 +52,22 @@ final class Notifier {
                                          content: content, trigger: trigger))
     }
 
+    /// やり残したまま家を出た知らせ。すぐ出す。集中モード中でも届くように「即時」にする。
+    func notifyLeftHome(_ routine: Routine, on day: DayKey, after seconds: Double = 1) {
+        let remaining = routine.items.filter { !routine.isChecked($0.id, on: day) }.map(\.title)
+        let content = Self.content(for: routine, on: day)
+        content.title = "\(routine.name)が残ったまま、家を出ました"
+        let shown = remaining.prefix(4).joined(separator: "、")
+        let more = remaining.count > 4 ? " ほか\(remaining.count - 4)つ" : ""
+        content.body = "まだ：\(shown)\(more)"
+        content.interruptionLevel = .timeSensitive
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
+        center.add(UNNotificationRequest(identifier: Self.leftPrefix + routine.id.uuidString,
+                                         content: content, trigger: trigger))
+    }
+
+    private static let leftPrefix = "snooze-left-"
+
     func cancelSnooze(for routineID: UUID) {
         center.removePendingNotificationRequests(withIdentifiers: [Self.snoozePrefix + routineID.uuidString])
     }

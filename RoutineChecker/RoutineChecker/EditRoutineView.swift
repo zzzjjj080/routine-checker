@@ -60,6 +60,9 @@ struct TriggerEditView: View {
     @State private var timeTrigger: TimeTrigger
     @State private var homeTrigger: HomeTrigger
     @State private var showHome = false
+    @State private var leaveCheck: Bool
+    @State private var previewed = false
+    @EnvironmentObject private var homeMonitor: HomeMonitor
     private let name: String
 
     enum Kind: String, CaseIterable, Identifiable {
@@ -77,6 +80,7 @@ struct TriggerEditView: View {
     init(routine: Routine) {
         routineID = routine.id
         name = routine.name
+        _leaveCheck = State(initialValue: routine.leaveCheck)
         switch routine.trigger {
         case .none:
             _kind = State(initialValue: .off)
@@ -111,6 +115,8 @@ struct TriggerEditView: View {
                 case .home: Section("曜日と時間") { homeEditor }
                 case .off: EmptyView()
                 }
+
+                leaveSection
             }
             .navigationTitle("いつ知らせるか：\(name)")
             .navigationBarTitleDisplayMode(.inline)
@@ -162,6 +168,55 @@ struct TriggerEditView: View {
         Picker("間隔", selection: $homeTrigger.intervalMinutes) {
             ForEach(HomeTrigger.intervalChoices, id: \.self) { Text(Labels.interval($0)).tag($0) }
         }
+        homeButton
+    }
+
+    /// やり残したまま家を出たら知らせる。時刻・家にいる間・通知なし、のどれとも一緒に使える。
+    @ViewBuilder private var leaveSection: some View {
+        Section {
+            Toggle(isOn: $leaveCheck) {
+                Label("やり残したまま家を出たら知らせる", systemImage: "figure.walk.departure")
+            }
+            .onChange(of: leaveCheck) { Haptics.tap() }
+            if leaveCheck {
+                if kind != .home { homeButton }
+                if !homeMonitor.hasAlways {
+                    Button {
+                        Haptics.tap()
+                        homeMonitor.requestAlways(openSettingsIfNeeded: true)
+                    } label: {
+                        Label("位置情報を「常に」にしてください（家を出たのが分かりません）",
+                              systemImage: "location.slash.fill")
+                            .foregroundStyle(.orange)
+                    }
+                }
+                Button {
+                    Haptics.tap()
+                    model.previewLeaveAlert(routineID)
+                    previewed = true
+                } label: {
+                    Label(previewed ? "5秒後に出ます。ホーム画面に戻って待ってください" : "試しに知らせを出してみる",
+                          systemImage: "bell.badge")
+                }
+            }
+        } header: {
+            Text("家を出たとき")
+        } footer: {
+            Text(leaveFooter)
+        }
+    }
+
+    private var leaveFooter: String {
+        let start: String
+        switch kind {
+        case .times: start = "最初の時刻を過ぎてから"
+        case .home: start = "鳴らし始めを過ぎてから"
+        case .off: start = "その日のうちに"
+        }
+        return "\(start)、全部そろわないまま家の範囲を出たら、残っている項目を知らせます。1日1回まで。家を出たと分かるまで、数分かかることがあります。"
+    }
+
+    private var homeButton: some View {
         Button {
             Haptics.tap()
             showHome = true
@@ -177,6 +232,8 @@ struct TriggerEditView: View {
 
     private func save() {
         guard var routine = model.routine(routineID) else { dismiss(); return }
+        routine.leaveCheck = leaveCheck
+        if leaveCheck && !AppModel.shared.homeMonitor.hasAlways { AppModel.shared.homeMonitor.requestAlways() }
         switch kind {
         case .times:
             timeTrigger.times = Array(Set(timeTrigger.times)).sorted()

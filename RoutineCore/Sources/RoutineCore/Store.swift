@@ -40,7 +40,8 @@ public struct AppData: Codable, Hashable, Sendable {
             Routine(name: "朝",
                     text: "薬を飲む\n顔を洗う\n歯をみがく\n水を飲む\n天気を見る",
                     trigger: .times(TimeTrigger()),
-                    style: RoutineStyle(layout: .list, themeID: 0)),
+                    style: RoutineStyle(layout: .list, themeID: 0),
+                    leaveCheck: true),
             Routine(name: "帰り",
                     text: "手を洗う\n弁当箱を出す\nスマホを充電\n明日の準備",
                     trigger: .atHome(HomeTrigger()),
@@ -62,5 +63,5 @@ public struct AppData: Codable, Hashable, Sendable {
     }
 
     /// 家の判定が要るリストがあるか（なければ位置の見張りをしない）。
-    public var needsHome: Bool { routines.contains { $0.trigger.needsHome } }
+    public var needsHome: Bool { routines.contains { $0.trigger.needsHome || $0.leaveCheck } }
 }

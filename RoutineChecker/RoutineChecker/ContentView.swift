@@ -143,8 +143,8 @@ private struct RoutineRow: View {
             // 下の段：いつ知らせるか・編集。それぞれの画面を直接開く
             HStack(spacing: 10) {
                 Chip(icon: routine.trigger.needsHome ? "house.fill" : (routine.trigger.isOff ? "bell.slash.fill" : "bell.fill"),
-                     text: Labels.trigger(routine.trigger),
-                     color: routine.trigger.isOff ? .secondary : theme.accentColor, grow: true) {
+                     text: Labels.trigger(routine.trigger) + (routine.leaveCheck ? "・出かけに確認" : ""),
+                     color: routine.trigger.isOff && !routine.leaveCheck ? .secondary : theme.accentColor, grow: true) {
                     tapped += 1
                     onTrigger()
                 }
