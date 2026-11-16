@@ -64,6 +64,7 @@ final class AppModel: ObservableObject {
 
     func didBecomeActive() {
         start()
+        Trail.add("画面を開いた（位置情報：\(homeMonitor.authorizationLabel)）")
         // 日が変わっているかもしれないので、表示と予約を取り直す。
         objectWillChange.send()
         homeMonitor.refreshAuthorization()

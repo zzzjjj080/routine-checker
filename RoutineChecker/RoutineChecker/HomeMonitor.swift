@@ -16,6 +16,9 @@ final class HomeMonitor: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private var monitor: CLMonitor?
     private var eventsTask: Task<Void, Never>?
+    /// iOS 18 から、裏で位置の知らせを受け取るには「常に」の利用の宣言（サービスセッション）を持っている必要がある。
+    /// 持っていないと、出入りはアプリを開いた時にまとめて届く（家を出ても知らせが来ず、開いたら来た）
+    private var session: CLServiceSession?
     private var wantsAlways = false
     private static let conditionID = "home"
 
@@ -26,6 +29,16 @@ final class HomeMonitor: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     var hasAlways: Bool { authorization == .authorizedAlways }
+
+    var authorizationLabel: String {
+        switch manager.authorizationStatus {
+        case .authorizedAlways: return "常に"
+        case .authorizedWhenInUse: return "使用中のみ"
+        case .denied: return "許可しない"
+        case .restricted: return "制限あり"
+        default: return "未設定"
+        }
+    }
 
     func refreshAuthorization() {
         authorization = manager.authorizationStatus
@@ -72,6 +85,7 @@ final class HomeMonitor: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// 家の場所を見張る。`nil` なら見張りをやめる。
     func watch(_ home: Home?) {
         eventsTask?.cancel()
+        session = home == nil ? nil : (session ?? CLServiceSession(authorization: .always))
         eventsTask = Task { [weak self] in
             guard let self else { return }
             let monitor: CLMonitor

@@ -27,6 +27,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+        // 裏で起こされたかどうかを残す（家を出た時に iOS がアプリを起こしているかを確かめるため）
+        let woke = launchOptions?[.location] != nil ? "位置の知らせで起こされた" : "起動"
+        Trail.add("\(woke)（\(application.applicationState == .background ? "裏" : "画面あり")）")
         AppModel.shared.start()
         return true
     }
