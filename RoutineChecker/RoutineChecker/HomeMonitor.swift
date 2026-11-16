@@ -87,18 +87,42 @@ final class HomeMonitor: NSObject, ObservableObject, CLLocationManagerDelegate {
                 return
             }
             let center = CLLocationCoordinate2D(latitude: home.latitude, longitude: home.longitude)
-            let condition = CLMonitor.CircularGeographicCondition(center: center, radius: home.radius)
-            await monitor.add(condition, identifier: Self.conditionID, assuming: .unsatisfied)
+            // 同じ円をもう見張っていれば、足し直さない。
+            // 家を出てアプリが裏で起こされた時に毎回足し直すと、見張りが「不明」からやり直しになり、
+            // 届くはずの「出た」が消えてしまう（家を出ても知らせが出なかった原因の候補）
+            let existing = await monitor.record(for: Self.conditionID)
+            let same = (existing?.condition as? CLMonitor.CircularGeographicCondition).map {
+                abs($0.center.latitude - center.latitude) < 1e-7 && abs($0.center.longitude - center.longitude) < 1e-7
+                    && abs($0.radius - home.radius) < 0.5
+            } ?? false
+            if !same {
+                let condition = CLMonitor.CircularGeographicCondition(center: center, radius: home.radius)
+                await monitor.add(condition, identifier: Self.conditionID, assuming: .unsatisfied)
+                Trail.add("家の見張りを始めた（半径\(Int(home.radius))m）")
+            }
             if let record = await monitor.record(for: Self.conditionID) {
+                Trail.add("起動：いまは\(Self.label(record.lastEvent.state))")
                 self.apply(record.lastEvent.state)
             }
             do {
                 for try await event in await monitor.events where event.identifier == Self.conditionID {
+                    Trail.add("出入り：\(Self.label(event.state))")
                     self.apply(event.state)
                 }
             } catch {
-                // 見張りが止まった。次にアプリを開いた時に作り直す。
+                Trail.add("見張りが止まった：\(error.localizedDescription)")
+                // 次にアプリを開いた時に作り直す。
             }
+        }
+    }
+
+    private static func label(_ state: CLMonitor.Event.State) -> String {
+        switch state {
+        case .satisfied: return "家の中"
+        case .unsatisfied: return "家の外"
+        case .unknown: return "不明"
+        case .unmonitored: return "見張っていない"
+        @unknown default: return "?"
         }
     }
 

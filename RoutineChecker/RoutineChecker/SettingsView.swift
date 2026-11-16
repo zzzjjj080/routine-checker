@@ -72,6 +72,21 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    LabeledContent("いまの判定", value: model.data.home == nil ? "家の場所が未設定" : (model.isHome ? "家の中" : "家の外"))
+                    DisclosureGroup("家の出入りの記録") {
+                        let lines = Trail.all
+                        if lines.isEmpty { Text("まだありません").foregroundStyle(.secondary) }
+                        ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                            Text(line).font(.caption.monospacedDigit()).textSelection(.enabled)
+                        }
+                    }
+                } header: {
+                    Text("家を出た知らせ")
+                } footer: {
+                    Text("知らせが出なかった時は、ここを見るとどこで止まったか分かります。")
+                }
+
+                Section {
                     LabeledContent("版", value: version)
                 }
             }

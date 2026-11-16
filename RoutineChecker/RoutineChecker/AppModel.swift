@@ -131,12 +131,14 @@ final class AppModel: ObservableObject {
     /// やり残したリストを知らせ、その日はもう出さない印を付ける。
     private func didLeaveHome(now: Date = Date()) {
         let check = LeaveCheck(calendar: .current, resetTime: data.resetTime)
+        let verdicts = data.routines.map { "\($0.name)＝\(check.verdict(for: $0, now: now).label)" }
+        Trail.add("家を出た → " + verdicts.joined(separator: "・"))
         let targets = check.routinesToAlert(data.routines, now: now)
         guard !targets.isEmpty else { return }
         let day = today
         for r in targets {
             if let i = data.routines.firstIndex(where: { $0.id == r.id }) { data.routines[i].leaveAlertedDay = day }
-            notifier.notifyLeftHome(r, on: day)
+            notifier.notifyLeftHome(r, on: day, badge: badgeCount)
         }
     }
 
@@ -145,11 +147,14 @@ final class AppModel: ObservableObject {
         guard let r = routine(routineID) else { return }
         Task {
             await notifier.requestAuthorizationIfNeeded()
-            notifier.notifyLeftHome(r, on: today, after: 5)
+            notifier.notifyLeftHome(r, on: today, after: 5, badge: badgeCount)
         }
     }
 
     // MARK: 保存・通知
+
+    /// いまアイコンに出す数字。
+    var badgeCount: Int { Badge(calendar: .current, resetTime: data.resetTime).count(data.routines, at: Date()) }
 
     private func save() {
         guard let raw = try? data.encoded() else { return }
@@ -157,11 +162,17 @@ final class AppModel: ObservableObject {
     }
 
     func refreshNotifications() {
-        let planner = Planner(calendar: .current, resetTime: data.resetTime)
+        // iOS が覚えておける通知は64件。アイコンの数字の分（多くて12件）と「あとで」の分を空けておく
+        let planner = Planner(calendar: .current, resetTime: data.resetTime, limit: 48)
         let home = data.home != nil && isHome
-        let plan = planner.plan(routines: data.routines, now: Date(), isHome: home)
+        let now = Date()
+        let plan = planner.plan(routines: data.routines, now: now, isHome: home)
         let routines = data.routines
         let reset = data.resetTime
-        Task { await notifier.replace(with: plan, routines: routines, resetTime: reset) }
+        let badge = Badge(calendar: .current, resetTime: reset)
+        let changes = badge.changes(routines, after: now)
+        let current = badge.count(routines, at: now)
+        Task { await notifier.replace(with: plan, routines: routines, resetTime: reset,
+                                      badgeNow: current, badgeChanges: changes) }
     }
 }

@@ -87,3 +87,55 @@ final class LeaveCheckTests: XCTestCase {
         XCTAssertEqual(back, d)
     }
 }
+
+final class BadgeTests: XCTestCase {
+    let cal: Calendar = {
+        var c = Calendar(identifier: .gregorian)
+        c.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        return c
+    }()
+
+    func at(_ d: Int, _ h: Int, _ m: Int = 0) -> Date {
+        cal.date(from: DateComponents(year: 2026, month: 11, day: d, hour: h, minute: m))!
+    }
+
+    var badge: Badge { Badge(calendar: cal, resetTime: TimeOfDay(3)) }
+    let morning = Routine(name: "朝", text: "a\nb\nc", trigger: .times(TimeTrigger(times: [TimeOfDay(7)])))
+    let evening = Routine(name: "帰り", text: "x\ny", trigger: .atHome(HomeTrigger()))
+
+    func test始まる前は0_始まったら残りの数() {
+        XCTAssertEqual(badge.count([morning, evening], at: at(16, 6)), 0)
+        XCTAssertEqual(badge.count([morning, evening], at: at(16, 7)), 3)
+        XCTAssertEqual(badge.count([morning, evening], at: at(16, 19)), 5)
+    }
+
+    func test済んだ項目は引く() {
+        var r = morning
+        let day = cal.routineDay(of: at(16, 7), resetAt: TimeOfDay(3))
+        r.toggle(r.items[0].id, on: day, at: at(16, 7))
+        XCTAssertEqual(badge.count([r], at: at(16, 8)), 2)
+    }
+
+    func test通知なしのリストは数えない() {
+        let r = Routine(name: "メモ", text: "a", trigger: .none)
+        XCTAssertEqual(badge.count([r], at: at(16, 12)), 0)
+    }
+
+    func test変わる時刻_始まりと区切り() {
+        let ch = badge.changes([morning, evening], after: at(16, 6), days: 1)
+        XCTAssertEqual(ch.map(\.count), [3, 5, 0, 3, 5])
+        XCTAssertEqual(ch.map(\.date), [at(16, 7), at(16, 18), at(17, 3), at(17, 7), at(17, 18)])
+    }
+}
+
+final class LeaveVerdictTests: XCTestCase {
+    func test理由が分かる() {
+        var c = Calendar(identifier: .gregorian)
+        c.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        let now = c.date(from: DateComponents(year: 2026, month: 11, day: 16, hour: 6))!
+        let check = LeaveCheck(calendar: c)
+        let r = Routine(name: "朝", text: "a", trigger: .times(TimeTrigger(times: [TimeOfDay(7)])), leaveCheck: true)
+        XCTAssertEqual(check.verdict(for: r, now: now), .notStarted)
+        XCTAssertEqual(check.verdict(for: Routine(name: "朝", text: "a"), now: now), .off)
+    }
+}
