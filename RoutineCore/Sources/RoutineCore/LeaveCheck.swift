@@ -93,7 +93,7 @@ public struct LeaveCheck: Sendable {
     }
 }
 
-/// ホーム画面のアイコンに出す数字：今日始まっていて、まだ済んでいない項目の数。
+/// ホーム画面のアイコンに出す数字：今日始まっていて、まだそろっていないリストの数（項目の数ではない）。
 ///
 /// 通知なしのリストは数えない（いつ始まるか決まっていないので、ずっと数字が残ってしまう）。
 /// アプリが閉じていても数字が変わるよう、変わる時刻（リストが始まる時刻・区切りの時刻）も出す。
@@ -111,7 +111,7 @@ public struct Badge: Sendable {
         let start = DayStart(calendar: calendar, resetTime: resetTime)
         return routines.reduce(0) { sum, r in
             guard let s = start.startDate(of: r.trigger, on: day), now >= s else { return sum }
-            return sum + r.items.count - r.checkedIDs(on: day).count
+            return sum + (r.items.isEmpty || r.isComplete(on: day) ? 0 : 1)
         }
     }
 

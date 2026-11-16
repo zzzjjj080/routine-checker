@@ -103,17 +103,19 @@ final class BadgeTests: XCTestCase {
     let morning = Routine(name: "朝", text: "a\nb\nc", trigger: .times(TimeTrigger(times: [TimeOfDay(7)])))
     let evening = Routine(name: "帰り", text: "x\ny", trigger: .atHome(HomeTrigger()))
 
-    func test始まる前は0_始まったら残りの数() {
+    func test始まる前は0_始まったらそろっていないリストの数() {
         XCTAssertEqual(badge.count([morning, evening], at: at(16, 6)), 0)
-        XCTAssertEqual(badge.count([morning, evening], at: at(16, 7)), 3)
-        XCTAssertEqual(badge.count([morning, evening], at: at(16, 19)), 5)
+        XCTAssertEqual(badge.count([morning, evening], at: at(16, 7)), 1)
+        XCTAssertEqual(badge.count([morning, evening], at: at(16, 19)), 2)
     }
 
-    func test済んだ項目は引く() {
+    func test一部済んでも1_全部そろえば0() {
         var r = morning
         let day = cal.routineDay(of: at(16, 7), resetAt: TimeOfDay(3))
         r.toggle(r.items[0].id, on: day, at: at(16, 7))
-        XCTAssertEqual(badge.count([r], at: at(16, 8)), 2)
+        XCTAssertEqual(badge.count([r], at: at(16, 8)), 1)
+        for item in r.items.dropFirst() { r.toggle(item.id, on: day, at: at(16, 7)) }
+        XCTAssertEqual(badge.count([r], at: at(16, 8)), 0)
     }
 
     func test通知なしのリストは数えない() {
@@ -123,7 +125,7 @@ final class BadgeTests: XCTestCase {
 
     func test変わる時刻_始まりと区切り() {
         let ch = badge.changes([morning, evening], after: at(16, 6), days: 1)
-        XCTAssertEqual(ch.map(\.count), [3, 5, 0, 3, 5])
+        XCTAssertEqual(ch.map(\.count), [1, 2, 0, 1, 2])
         XCTAssertEqual(ch.map(\.date), [at(16, 7), at(16, 18), at(17, 3), at(17, 7), at(17, 18)])
     }
 }
