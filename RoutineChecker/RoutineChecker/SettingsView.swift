@@ -87,6 +87,12 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Link(destination: URL(string: "https://zzzjjj080.github.io/routine-support/")!) {
+                        Label("使い方・お問い合わせ", systemImage: "questionmark.circle")
+                    }
+                    Link(destination: URL(string: "https://apps.apple.com/jp/developer/jin-nakamura/id6802013586")!) {
+                        Label("作者のほかのアプリ", systemImage: "square.grid.2x2")
+                    }
                     LabeledContent("版", value: version)
                 }
             }
@@ -116,7 +122,7 @@ struct SettingsView: View {
     private var locationNote: String {
         switch homeMonitor.authorization {
         case .notDetermined: return "押すと許可を聞きます。「使用中のみ」のあとに出る画面で「常に許可」を選んでください。"
-        default: return "「家にいる間」の通知には「常に」が要ります。押すと設定アプリが開くので、位置情報 →「常に」に。"
+        default: return "家を出た時の確認と「家にいる間」の通知には「常に」が要ります。押すと設定アプリが開くので、位置情報 →「常に」に。"
         }
     }
 

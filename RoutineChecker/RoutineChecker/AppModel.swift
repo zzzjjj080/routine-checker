@@ -50,7 +50,32 @@ final class AppModel: ObservableObject {
             data = .starter
         }
         isHome = UserDefaults.standard.bool(forKey: Self.isHomeKey)
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-RC_SHOT") { seedForScreenshots() }
+        #endif
     }
+
+    #if DEBUG
+    /// ストアの画像を撮るための見本（開発用ビルドだけ）。家は仙台駅のあたり、朝は3つ済み。
+    private func seedForScreenshots() {
+        var morning = Routine(name: "朝", text: "薬を飲む\n歯をみがく\n弁当を持つ\n財布とスマホ\n鍵をかける\n窓を閉める",
+                              trigger: .times(TimeTrigger(weekdays: Weekdays.everyday, times: [TimeOfDay(7)])),
+                              style: RoutineStyle(layout: .list, themeID: 0), leaveCheck: true)
+        let day = Calendar.current.routineDay(of: Date(), resetAt: TimeOfDay(3))
+        for item in morning.items.prefix(3) { morning.toggle(item.id, on: day, at: Date()) }
+        let evening = Routine(name: "帰り", text: "手を洗う\n弁当箱を出す\nスマホを充電\n明日の準備",
+                              trigger: .atHome(HomeTrigger(weekdays: Weekdays.everyday)),
+                              style: RoutineStyle(layout: .list, themeID: 3))
+        let holiday = Routine(name: "休日", text: "洗濯\n掃除機\n植物に水\n買い物リスト",
+                              trigger: .times(TimeTrigger(weekdays: Weekdays.weekends, times: [TimeOfDay(9)])),
+                              style: RoutineStyle(layout: .list, themeID: 1))
+        let trip = Routine(name: "出張の前", text: "充電器\nPC\n名刺\n切符", trigger: .none,
+                           style: RoutineStyle(layout: .list, themeID: 2), leaveCheck: true)
+        data = AppData(routines: [morning, evening, holiday, trip],
+                       home: Home(latitude: 38.2602, longitude: 140.8824))
+        isHome = true
+    }
+    #endif
 
     func start() {
         guard !started else { return }

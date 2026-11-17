@@ -37,7 +37,7 @@ struct ContentView: View {
                             Haptics.tap()
                             showSettings = true
                         } label: {
-                            Label("家の場所を決めると「家にいる間」の通知が使えます", systemImage: "house")
+                            Label("家の場所を決めると、家を出た時の確認が使えます", systemImage: "house")
                                 .font(.footnote)
                         }
                     }
@@ -71,7 +71,20 @@ struct ContentView: View {
             .sheet(item: $triggerRoutine) { TriggerEditView(routine: $0).hapticOnOpen() }
             .sheet(item: $editRoutine) { EditRoutineView(routine: $0).hapticOnOpen() }
         }
-        .task { await model.notifier.requestAuthorizationIfNeeded() }
+        .task {
+            #if DEBUG
+            // ストアの画像を撮る時は、許可を聞かず、指定の画面を開く（-RC_SHOT -RC_SCREEN routine|trigger）
+            let args = ProcessInfo.processInfo.arguments
+            if args.contains("-RC_SHOT") {
+                let screen = args.firstIndex(of: "-RC_SCREEN").map { args[$0 + 1] }
+                let first = model.data.routines.first
+                if screen == "routine", let first { path = [first.id] }
+                if screen == "trigger", let first { triggerRoutine = first }
+                return
+            }
+            #endif
+            await model.notifier.requestAuthorizationIfNeeded()
+        }
         .onChange(of: model.openRoutineID) { _, id in
             guard let id else { return }
             path = [id]

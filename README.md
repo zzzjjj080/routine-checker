@@ -135,3 +135,15 @@ cd RoutineCore && swift test
 - [x] 画面（一覧・リスト3種の見た目・編集・設定・家の場所）
 - [x] 通知の予約・家の出入りの見張り
 - [ ] 実機での確認（通知・家の出入り）
+
+## リリース（App Store）
+
+- 名前（案）「ルーティン - 出かける前の忘れ物チェック」、無料・日本のみ・カテゴリは仕事効率化／ライフスタイル
+- サポート・プライバシーポリシー：https://zzzjjj080.github.io/routine-support/ （リポジトリ `zzzjjj080/routine-support`）
+- 手順（App Store Connect にアプリを登録したあと）
+  1. `./upload.sh` … アーカイブして上げる（`--archive-only` で上げずに点検だけ）
+  2. `python3 store/listing.py` … 掲載文・カテゴリ・年齢・無料・日本のみ・承認後に自動公開
+  3. `python3 store/review.py` … 審査の連絡先とメモ（家を出られない審査用に「試しに知らせを出してみる」の手順）
+  4. `python3 store/shots.py` … 画像（`store/raw-69` 6.9インチ・`store/raw-65` 6.5インチ）
+  5. `python3 store/submit.py <ビルド番号>` … ビルドを紐づけて提出
+- 画像の撮り直し：開発用ビルドを `-RC_SHOT [-RC_SCREEN routine|trigger]` で起動すると見本のデータで開く（シミュレータ `Routine-Shot69`＝`.sim-shot`）
