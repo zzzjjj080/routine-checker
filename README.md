@@ -138,9 +138,10 @@ cd RoutineCore && swift test
 
 ## リリース（App Store）
 
-- 名前（案）「ルーティン - 出かける前の忘れ物チェック」、無料・日本のみ・カテゴリは仕事効率化／ライフスタイル
+- 名前「ルーティン - 出かける前の忘れ物チェック」、アプリID 6837576659、SKU routine、無料・日本のみ・カテゴリは仕事効率化／ライフスタイル
+- **1.0 (1) を審査提出（2026-11-21、承認後に自動公開）**。Appのプライバシーは「データを収集しない」で公開済み（API では書けない）
 - サポート・プライバシーポリシー：https://zzzjjj080.github.io/routine-support/ （リポジトリ `zzzjjj080/routine-support`）
-- 手順（App Store Connect にアプリを登録したあと）
+- 手順（次の版も同じ。版を上げたら `MARKETING_VERSION` とビルド番号を変える）
   1. `./upload.sh` … アーカイブして上げる（`--archive-only` で上げずに点検だけ）
   2. `python3 store/listing.py` … 掲載文・カテゴリ・年齢・無料・日本のみ・承認後に自動公開
   3. `python3 store/review.py` … 審査の連絡先とメモ（家を出られない審査用に「試しに知らせを出してみる」の手順）
