@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 実機にどのビルドが入ったかの印。install-device.sh が毎回渡す。
+	     それ以外の値はビルド設定（INFOPLIST_KEY_）から生成したものと合わさる -->
+	<key>RCBuildStamp</key>
+	<string>$(RC_BUILD_STAMP)</string>
+</dict>
+</plist>
